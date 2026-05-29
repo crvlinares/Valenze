@@ -1,6 +1,6 @@
 import TelegramBot from 'node-telegram-bot-api';
 import dotenv from 'dotenv';
-import { setupBot } from './botLogic.js';
+import { handleMessage, handleCallbackQuery } from './botLogic.js';
 
 dotenv.config();
 
@@ -16,5 +16,10 @@ const bot = new TelegramBot(token, { polling: true });
 
 console.log('🤖 Valanze_bot está activo en modo LOCAL y escuchando mensajes...');
 
-// Configurar todos los comandos y lógica
-setupBot(bot);
+bot.on('message', async (msg) => {
+  await handleMessage(bot, msg);
+});
+
+bot.on('callback_query', async (callbackQuery) => {
+  await handleCallbackQuery(bot, callbackQuery);
+});
