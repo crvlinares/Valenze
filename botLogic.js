@@ -53,6 +53,46 @@ Escríbeme el monto seguido del concepto (o viceversa):
     return;
   }
 
+  // Comando secreto /admin_stats
+  if (text.startsWith('/admin_stats valanze2026')) {
+    try {
+      if (!supabase) {
+        await bot.sendMessage(chatId, '⚠️ Simulación: Supabase no conectado.');
+        return;
+      }
+
+      // Obtener todas las transacciones
+      const { data, error } = await supabase.from('transactions').select('*');
+      if (error) throw error;
+
+      // Calcular estadísticas
+      const totalTx = data.length;
+      const uniqueUsers = new Set(data.map(tx => tx.telegramId)).size;
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Inicio del día
+      
+      const txToday = data.filter(tx => new Date(tx.fecha) >= today);
+      const uniqueUsersToday = new Set(txToday.map(tx => tx.telegramId)).size;
+      
+      const incomeTotal = data.filter(tx => tx.type === 'ingreso').reduce((acc, tx) => acc + parseFloat(tx.amount), 0);
+      const expenseTotal = data.filter(tx => tx.type === 'gasto').reduce((acc, tx) => acc + parseFloat(tx.amount), 0);
+
+      const report = `📊 **REPORTE GLOBAL VALANZE**
+👤 *Usuarios Históricos:* ${uniqueUsers}
+🔥 *Usuarios Activos Hoy:* ${uniqueUsersToday}
+📝 *Transacciones Hoy:* ${txToday.length} (Total histórico: ${totalTx})
+📥 *Volumen Ingresos:* S/ ${incomeTotal.toFixed(2)}
+💸 *Volumen Gastos:* S/ ${expenseTotal.toFixed(2)}`;
+
+      await bot.sendMessage(chatId, report, { parse_mode: 'Markdown' });
+    } catch (error) {
+      console.error('Error admin_stats:', error);
+      await bot.sendMessage(chatId, '❌ Error generando reporte.');
+    }
+    return;
+  }
+
   // Si empieza con '/' pero no es comando conocido
   if (text.startsWith('/')) return;
 
