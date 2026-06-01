@@ -10,7 +10,7 @@ export async function handleMessage(bot, msg) {
 
   // Comando /start
   if (text.startsWith('/start')) {
-    const helpMessage = `¡Hola! Soy *Valanze*, tu asistente financiero en Telegram 💸.
+    const helpMessage = `👋 ¡Hola! Soy *Valanze*, tu asistente financiero en Telegram 💸.
 
 Mi trabajo es ayudarte a registrar tus gastos e ingresos de la manera más rápida posible. ¡Olvídate de las hojas de cálculo!
 
@@ -90,6 +90,20 @@ Escríbeme el monto seguido del concepto (o viceversa):
       console.error('Error admin_stats:', error);
       await bot.sendMessage(chatId, '❌ Error generando reporte.');
     }
+    return;
+  }
+
+  // Comando /seguridad
+  if (text.startsWith('/seguridad')) {
+    const securityMsg = `🛡️ **Seguridad y Privacidad en Valanze**
+
+1️⃣ **Cero Virus:** Valanze es un bot oficial de Telegram. No tienes que descargar ninguna app externa ni instalar archivos APK.
+2️⃣ **Privacidad Total:** Tus datos NO se comparten con bancos, SUNAT ni agencias de publicidad.
+3️⃣ **Encriptación:** Tu información financiera se guarda en servidores seguros en la nube (AWS) protegidos bajo los estándares de Supabase.
+4️⃣ **Tú tienes el control:** Valanze no pide tus contraseñas del banco ni se conecta a tus tarjetas. Es un registro manual y 100% privado.
+
+Tu tranquilidad es nuestra prioridad. 🔒`;
+    await bot.sendMessage(chatId, securityMsg, { parse_mode: 'Markdown' });
     return;
   }
 
