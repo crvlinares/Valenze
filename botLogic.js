@@ -107,6 +107,21 @@ Tu tranquilidad es nuestra prioridad. 🔒`;
     return;
   }
 
+  // Comando /ayuda
+  if (text.startsWith('/ayuda')) {
+    const helpOptions = {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '❓ ¿Cómo anoto mis gastos?', callback_data: 'help_register' }],
+          [{ text: '🗑️ Me equivoqué, ¿cómo borro?', callback_data: 'help_undo' }],
+          [{ text: '📞 Hablar con un humano', callback_data: 'help_support' }]
+        ]
+      }
+    };
+    await bot.sendMessage(chatId, '🆘 **Centro de Ayuda Valanze**\n\n¿En qué te puedo ayudar hoy? Elige una opción:', { parse_mode: 'Markdown', ...helpOptions });
+    return;
+  }
+
   // Si empieza con '/' pero no es comando conocido
   if (text.startsWith('/')) return;
 
@@ -178,5 +193,14 @@ export async function handleCallbackQuery(bot, callbackQuery) {
       console.error('Error al deshacer:', error);
       await bot.answerCallbackQuery(callbackQuery.id, { text: 'Error al deshacer.', show_alert: true });
     }
+  } else if (data === 'help_register') {
+    await bot.sendMessage(chatId, '📝 **Para registrar algo solo escríbelo:**\n\nEjemplo de Gasto: `15 almuerzo`\nEjemplo de Ingreso: `+50 pago`\n\nNo necesitas usar comandos ni menús complejos, yo entiendo tu texto automáticamente.', { parse_mode: 'Markdown' });
+    await bot.answerCallbackQuery(callbackQuery.id);
+  } else if (data === 'help_undo') {
+    await bot.sendMessage(chatId, '🗑️ **¿Te equivocaste?**\n\nCada vez que registras algo, aparecerá un botón que dice `❌ Deshacer registro` debajo del mensaje de confirmación. Solo tócalo y se borrará al instante.', { parse_mode: 'Markdown' });
+    await bot.answerCallbackQuery(callbackQuery.id);
+  } else if (data === 'help_support') {
+    await bot.sendMessage(chatId, '📞 **Soporte Directo**\n\nComo somos una aplicación en versión Beta, tu retroalimentación vale oro. Si algo falla, escríbele un mensaje directo al fundador de Valanze para que lo solucione hoy mismo.', { parse_mode: 'Markdown' });
+    await bot.answerCallbackQuery(callbackQuery.id);
   }
 }
