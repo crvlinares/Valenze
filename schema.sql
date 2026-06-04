@@ -21,12 +21,20 @@ CREATE INDEX IF NOT EXISTS transactions_telegram_id_idx ON public.transactions (
 -- 3. Habilitar la seguridad a nivel de fila (Row Level Security - RLS)
 ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 
--- 4. Crear políticas de acceso (opcional si usas la service_role key, que se salta RLS)
--- Para este MVP, si usas la "service_role" key de Supabase en tu archivo .env,
--- el bot tendrá acceso total automáticamente sin necesidad de políticas adicionales.
--- Si prefieres usar la "anon" key, ejecuta la siguiente política para permitir lectura y escritura:
-CREATE POLICY "Permitir acceso total al bot de Telegram" ON public.transactions
-  FOR ALL
-  TO anon
-  USING (true)
-  WITH CHECK (true);
+-- 4. Funciones RPC (Remote Procedure Calls) para optimización de rendimiento
+-- Esta función calcula el balance directamente en la base de datos para no saturar la memoria RAM.
+CREATE OR REPLACE FUNCTION get_user_balance(uid bigint)
+RETURNS TABLE(income numeric, expenses numeric) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    COALESCE(SUM(CASE WHEN type = 'ingreso' THEN amount ELSE 0 END), 0) AS income,
+    COALESCE(SUM(CASE WHEN type = 'gasto' THEN amount ELSE 0 END), 0) AS expenses
+  FROM transactions
+  WHERE telegram_id = uid;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Nota de Seguridad:
+-- Valanze utiliza la "service_role" key exclusivamente desde el backend protegido (Vercel)
+-- para insertar registros autenticados. El acceso público anónimo está totalmente bloqueado por RLS.
