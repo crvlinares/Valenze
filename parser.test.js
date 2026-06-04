@@ -3,17 +3,17 @@ import assert from 'node:assert';
 import { parseMessage } from './parser.js';
 
 test('Parser: Casos básicos de gastos', (t) => {
-  assert.deepStrictEqual(parseMessage('pagué 20 por el taxi'), { amount: 20, description: 'pagué por el taxi', type: 'gasto' });
-  assert.deepStrictEqual(parseMessage('150.50 supermercado'), { amount: 150.5, description: 'supermercado', type: 'gasto' });
-  assert.deepStrictEqual(parseMessage('20'), { amount: 20, description: 'Varios', type: 'gasto' });
+  assert.deepStrictEqual(parseMessage('pagué 20 por el taxi'), { amount: 20, description: 'pagué por el taxi', type: 'gasto', category: 'Transporte' });
+  assert.deepStrictEqual(parseMessage('150.50 supermercado'), { amount: 150.5, description: 'supermercado', type: 'gasto', category: 'Comida' });
+  assert.deepStrictEqual(parseMessage('20'), { amount: 20, description: 'Varios', type: 'gasto', category: 'Varios' });
 });
 
 test('Parser: Casos básicos de ingresos', (t) => {
-  assert.deepStrictEqual(parseMessage('+500 bono'), { amount: 500, description: 'bono', type: 'ingreso' });
-  assert.deepStrictEqual(parseMessage('sueldo 2000'), { amount: 2000, description: 'sueldo', type: 'ingreso' });
-  assert.deepStrictEqual(parseMessage('me yapearon 50'), { amount: 50, description: 'me yapearon', type: 'ingreso' }); // 'yapeada' is in keywords, but wait! We didn't add 'yapearon', let's test what it does: it defaults to gasto.
+  assert.deepStrictEqual(parseMessage('+500 bono'), { amount: 500, description: 'bono', type: 'ingreso', category: 'Ingresos' });
+  assert.deepStrictEqual(parseMessage('sueldo 2000'), { amount: 2000, description: 'sueldo', type: 'ingreso', category: 'Ingresos' });
+  assert.deepStrictEqual(parseMessage('me yapearon 50'), { amount: 50, description: 'me yapearon', type: 'ingreso', category: 'Ingresos' }); // 'yapeada' is in keywords, but wait! We didn't add 'yapearon', let's test what it does: it defaults to gasto.
   // Actually, let's test explicit keywords we defined: 'ingreso', 'sueldo', 'pago', 'ganancia', 'recibi', 'recibí', 'yapeada', 'plin'
-  assert.deepStrictEqual(parseMessage('yapeada 50'), { amount: 50, description: 'yapeada', type: 'ingreso' });
+  assert.deepStrictEqual(parseMessage('yapeada 50'), { amount: 50, description: 'yapeada', type: 'ingreso', category: 'Ingresos' });
 });
 
 test('Parser: Ignorar porcentajes (Novedad Fase 1.5)', (t) => {
@@ -41,7 +41,7 @@ test('Parser: Límites y truncamiento (Novedad Fase 1.5)', (t) => {
 });
 
 test('Parser: Limpieza y formato', (t) => {
-  assert.deepStrictEqual(parseMessage('   15   taxi   '), { amount: 15, description: 'taxi', type: 'gasto' });
+  assert.deepStrictEqual(parseMessage('   15   taxi   '), { amount: 15, description: 'taxi', type: 'gasto', category: 'Transporte' });
   // Comas en lugar de puntos
-  assert.deepStrictEqual(parseMessage('10,50 pan'), { amount: 10.5, description: 'pan', type: 'gasto' });
+  assert.deepStrictEqual(parseMessage('10,50 pan'), { amount: 10.5, description: 'pan', type: 'gasto', category: 'Varios' });
 });

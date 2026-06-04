@@ -1,5 +1,4 @@
-import { parseMessage } from './parser.js';
-import { insertTransaction, getBalance, deleteLastTransaction, getAdminClient } from './db.js';
+import { insertTransaction, getBalance, deleteLastTransaction, getAdminClient, getReport } from './db.js';
 
 export async function handleMessage(bot, msg) {
   const chatId = msg.chat.id;
@@ -22,8 +21,10 @@ Escríbeme el monto seguido del concepto (o viceversa):
 • \`sueldo 2500\`  → Registra un ingreso (usa palabras clave como *sueldo* o *pago*)
 
 📊 **Comandos disponibles:**
-• /balance - Revisa el total de tus ingresos, gastos y tu saldo disponible.
-• /start - Muestra este mensaje de ayuda.`;
+• /balance - Revisa el total de ingresos, gastos y saldo.
+• /reporte - Muestra en qué categorías estás gastando más este mes.
+• /novedades - Entérate de las últimas mejoras del bot.
+• /legal - Política de Privacidad y Términos de Uso.`;
 
     await bot.sendMessage(chatId, helpMessage, { parse_mode: 'Markdown' });
     return;
@@ -43,10 +44,6 @@ Escríbeme el monto seguido del concepto (o viceversa):
   // Comando /balance
   if (text.startsWith('/balance')) {
     try {
-      if (!supabase) {
-        await bot.sendMessage(chatId, '⚠️ *Modo Simulación:* Supabase no está configurado.', { parse_mode: 'Markdown' });
-        return;
-      }
 
       const { income, expenses, balance } = await getBalance(userId);
       const balanceMessage = `📊 **Tu Balance Financiero:**
@@ -108,6 +105,34 @@ Escríbeme el monto seguido del concepto (o viceversa):
     return;
   }
 
+  // Comando /reporte
+  if (text.startsWith('/reporte')) {
+    try {
+      const data = await getReport(userId);
+      
+      if (!data || data.length === 0) {
+        await bot.sendMessage(chatId, '📊 Aún no tienes gastos registrados este mes para generar un reporte.');
+        return;
+      }
+
+      let reportMsg = `📊 *Tu Reporte de Gastos del Mes*\n\n`;
+      let total = 0;
+      
+      data.forEach(row => {
+        const val = parseFloat(row.total);
+        total += val;
+        reportMsg += `🔸 *${row.category}*: S/ ${val.toFixed(2)}\n`;
+      });
+      
+      reportMsg += `\n💸 *Gasto Total del Mes:* S/ ${total.toFixed(2)}`;
+      await bot.sendMessage(chatId, reportMsg, { parse_mode: 'Markdown' });
+    } catch (error) {
+      console.error('Error generando reporte:', error);
+      await bot.sendMessage(chatId, '❌ Hubo un error al generar tu reporte mensual.');
+    }
+    return;
+  }
+
   // Comando /seguridad
   if (text.startsWith('/seguridad')) {
     const securityMsg = `🛡️ **Seguridad y Privacidad en Valanze**
@@ -119,6 +144,20 @@ Escríbeme el monto seguido del concepto (o viceversa):
 
 Tu tranquilidad es nuestra prioridad. 🔒`;
     await bot.sendMessage(chatId, securityMsg, { parse_mode: 'Markdown' });
+    return;
+  }
+
+  // Comando /legal
+  if (text.startsWith('/legal')) {
+    const legalMsg = `📄 *Política de Privacidad y Términos de Uso*\n\n` +
+      `Valanze cumple con la normativa peruana vigente (Ley N° 29733 de Protección de Datos Personales).\n\n` +
+      `1️⃣ *Recopilación:* Solo recopilamos tu ID de Telegram y las transacciones que registras voluntariamente.\n` +
+      `2️⃣ *Uso:* No vendemos, alquilamos ni compartimos tus datos con terceros, bancos o SUNAT.\n` +
+      `3️⃣ *Arquitectura Zero-Trust:* Tu información financiera requiere una firma criptográfica única asociada a tu cuenta para ser leída. Ni siquiera nuestros desarrolladores pueden acceder a ella directamente.\n` +
+      `4️⃣ *Derechos ARCO:* Puedes solicitar la eliminación total y permanente de tus registros contactando a soporte.\n\n` +
+      `*Nota sobre funcionalidades futuras:* Si en el futuro Valanze permite el registro por notas de voz o fotos de recibos, dichos archivos multimedia no serán almacenados permanentemente en nuestros servidores; solo se extraerá el texto numérico.\n\n` +
+      `Al usar Valanze, aceptas estas condiciones.`;
+    await bot.sendMessage(chatId, legalMsg, { parse_mode: 'Markdown' });
     return;
   }
 
@@ -147,23 +186,20 @@ Tu tranquilidad es nuestra prioridad. 🔒`;
     return;
   }
 
-  const { amount, description, type } = parsed;
+  const { amount, description, type, category } = parsed;
   const username = msg.from.username;
 
   const typeIcon = type === 'ingreso' ? '📥' : '💸';
   const typeText = type === 'ingreso' ? 'Ingreso' : 'Gasto';
+  // Evitar mostrar categoría si es ingreso (para no confundir al usuario)
+  const categoryDisplay = type === 'gasto' ? `\n🏷️ *Categoría:* ${category}` : '';
 
   try {
-    if (!supabase) {
-      await bot.sendMessage(chatId, `⚠️ Simulación:\n${typeIcon} *${typeText}*: S/ ${amount.toFixed(2)}\n📝 *Concepto*: "${description}"`, { parse_mode: 'Markdown' });
-      return;
-    }
-
-    await insertTransaction({ telegramId: userId, username, amount, description, type, rawText: text });
+    await insertTransaction({ telegramId: userId, username, amount, description, type, category, rawText: text });
 
     const successMessage = `✅ Registrado: *${typeText}* ${typeIcon}
 💰 *Monto:* S/ ${amount.toFixed(2)}
-📝 *Concepto:* "${description}"`;
+📝 *Concepto:* "${description}"${categoryDisplay}`;
 
     await bot.sendMessage(chatId, successMessage, {
       parse_mode: 'Markdown',
@@ -187,10 +223,6 @@ export async function handleCallbackQuery(bot, callbackQuery) {
 
   if (data === 'undo_last') {
     try {
-      if (!supabase) {
-        await bot.answerCallbackQuery(callbackQuery.id, { text: 'No disponible en simulación.', show_alert: true });
-        return;
-      }
 
       const deletedTx = await deleteLastTransaction(userId);
       if (deletedTx) {

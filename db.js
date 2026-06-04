@@ -60,7 +60,7 @@ export function getAdminClient() {
   });
 }
 
-export async function insertTransaction({ telegramId, username, amount, description, type, rawText }) {
+export async function insertTransaction({ telegramId, username, amount, description, type, category, rawText }) {
   const client = getClientForUser(telegramId);
   if (!client) throw new Error('Base de datos no configurada.');
 
@@ -72,6 +72,7 @@ export async function insertTransaction({ telegramId, username, amount, descript
       amount,
       description,
       type,
+      category,
       raw_text: rawText
     }])
     .select();
@@ -115,4 +116,14 @@ export async function deleteLastTransaction(telegramId) {
 
   if (deleteError) throw deleteError;
   return lastTx;
+}
+
+export async function getReport(telegramId) {
+  const client = getClientForUser(telegramId);
+  if (!client) throw new Error('Base de datos no configurada.');
+
+  const { data, error } = await client.rpc('get_user_report', { uid: telegramId });
+  if (error) throw error;
+
+  return data || [];
 }

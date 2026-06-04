@@ -43,23 +43,41 @@ export function parseMessage(text) {
   // Limpiar espacios dobles y truncar a máximo 50 caracteres para la BD
   description = description.replace(/\s+/g, ' ').substring(0, 50).trim();
 
-  // Determinar el tipo (gasto o ingreso)
+  // Determinar el tipo (gasto o ingreso) y la categoría
   let type = 'gasto';
+  let category = 'Varios';
   const lowercaseDesc = description.toLowerCase();
 
-  // Lista de palabras clave que denotan un ingreso
+  // Detección de ingresos
   const ingresoKeywords = ['ingreso', 'sueldo', 'pago', 'ganancia', 'recibi', 'recibí', 'yapea', 'plin'];
-  
   const isExplicitIncome = rawNumber.startsWith('+') || 
                            ingresoKeywords.some(keyword => lowercaseDesc.includes(keyword));
 
   if (isExplicitIncome) {
     type = 'ingreso';
+    category = 'Ingresos';
+  } else {
+    // Categorización automática de gastos (Motor Simple MVP)
+    const categoriasBase = {
+      'Comida': ['almuerzo', 'cena', 'desayuno', 'comida', 'pizza', 'hamburguesa', 'kfc', 'chifa', 'restaurante', 'menu', 'menú', 'galletas', 'agua', 'supermercado', 'mercado', 'bodega'],
+      'Transporte': ['taxi', 'uber', 'indrive', 'pasaje', 'bus', 'combi', 'metropolitano', 'tren', 'gasolina', 'grifo', 'peaje'],
+      'Hogar': ['luz', 'agua', 'internet', 'alquiler', 'renta', 'limpieza', 'mantenimiento', 'casa', 'departamento', 'depa', 'gas'],
+      'Entretenimiento': ['cine', 'pelicula', 'netflix', 'spotify', 'fiesta', 'cerveza', 'trago', 'salida', 'juego', 'suscripcion', 'concierto', 'entrada'],
+      'Salud': ['farmacia', 'pastillas', 'medico', 'doctor', 'clinica', 'salud', 'inkafarma', 'mifarma', 'hospital', 'curita']
+    };
+
+    for (const [catName, keywords] of Object.entries(categoriasBase)) {
+      if (keywords.some(keyword => lowercaseDesc.includes(keyword))) {
+        category = catName;
+        break;
+      }
+    }
   }
 
   return {
     amount,
     description,
-    type
+    type,
+    category
   };
 }
