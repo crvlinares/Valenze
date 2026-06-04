@@ -57,38 +57,24 @@ export async function insertTransaction({ telegramId, username, amount, descript
   return data[0];
 }
 
-/**
- * Calcula el balance consolidado (ingresos - gastos) de un usuario.
- * 
- * @param {number} telegramId 
- * @returns {Promise<{income: number, expenses: number, balance: number}>}
- */
 export async function getBalance(telegramId) {
   if (!supabase) {
     throw new Error('Base de datos no configurada. Edita el archivo .env con tus credenciales de Supabase.');
   }
 
-  const { data, error } = await supabase
-    .from('transactions')
-    .select('type, amount')
-    .eq('telegram_id', telegramId);
+  const { data, error } = await supabase.rpc('get_user_balance', { uid: telegramId });
 
   if (error) {
     console.error('Error al obtener balance:', error);
     throw error;
   }
 
-  let income = 0;
-  let expenses = 0;
+  if (!data || data.length === 0) {
+    return { income: 0, expenses: 0, balance: 0 };
+  }
 
-  data.forEach(tx => {
-    const amt = parseFloat(tx.amount);
-    if (tx.type === 'ingreso') {
-      income += amt;
-    } else {
-      expenses += amt;
-    }
-  });
+  const income = parseFloat(data[0].income) || 0;
+  const expenses = parseFloat(data[0].expenses) || 0;
 
   return {
     income,

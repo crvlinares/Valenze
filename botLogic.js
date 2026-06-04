@@ -54,7 +54,10 @@ Escríbeme el monto seguido del concepto (o viceversa):
   }
 
   // Comando secreto /admin_stats
-  if (text.startsWith('/admin_stats valanze2026')) {
+  if (text.startsWith('/admin_stats')) {
+    if (!process.env.ADMIN_TELEGRAM_ID || msg.from.id.toString() !== process.env.ADMIN_TELEGRAM_ID) {
+      return; // Ignorar silenciosamente si no es el admin
+    }
     try {
       if (!supabase) {
         await bot.sendMessage(chatId, '⚠️ Simulación: Supabase no conectado.');

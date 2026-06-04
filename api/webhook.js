@@ -9,8 +9,16 @@ const bot = new TelegramBot(token);
 
 export default async function handler(req, res) {
   try {
-    // Si la solicitud es POST, viene de Telegram
+    // Si la solicitud es POST, viene supuestamente de Telegram
     if (req.method === 'POST') {
+      
+      // Seguridad: Validar que el webhook realmente venga de nuestro bot de Telegram
+      const secretToken = req.headers['x-telegram-bot-api-secret-token'];
+      if (process.env.TELEGRAM_SECRET_TOKEN && secretToken !== process.env.TELEGRAM_SECRET_TOKEN) {
+        console.error('Intento de webhook no autorizado detectado.');
+        return res.status(401).send('Unauthorized');
+      }
+
       const update = req.body;
       
       if (update.message) {

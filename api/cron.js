@@ -5,9 +5,9 @@ const token = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(token);
 
 export default async function handler(req, res) {
-  // Autenticación por Query String para facilitar el uso en el Plan Hobby de Vercel
-  const url = new URL(req.url, `http://${req.headers.host}`);
-  if (url.searchParams.get('secret') !== 'valanze2026') {
+  // Autenticación oficial de Vercel Cron
+  const authHeader = req.headers['authorization'];
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return res.status(401).send('No autorizado');
   }
 

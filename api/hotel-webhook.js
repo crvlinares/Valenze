@@ -1,9 +1,9 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { handleHotelMessage } from '../hotelBotLogic.js';
 
-// Usamos el token fijo proporcionado para la demo
-const token = '8521262565:AAG7eoeXZln_ST_mmRku8Fx65zPelcc-2xQ';
-const bot = new TelegramBot(token);
+// Usar variable de entorno, NUNCA hardcodear secretos
+const token = process.env.HOTEL_BOT_TOKEN;
+const bot = token ? new TelegramBot(token) : null;
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
