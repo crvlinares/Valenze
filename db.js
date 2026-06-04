@@ -19,110 +19,100 @@ if (!isConfigured) {
 
 export const supabase = isConfigured ? createClient(supabaseUrl, supabaseKey) : null;
 
-/**
- * Registra una nueva transacción (gasto o ingreso) en Supabase.
- * 
- * @param {object} params
- * @param {number} params.telegramId
- * @param {string} params.username
- * @param {number} params.amount
- * @param {string} params.description
- * @param {'gasto' | 'ingreso'} params.type
- * @param {string} params.rawText
- */
-export async function insertTransaction({ telegramId, username, amount, description, type, rawText }) {
-  if (!supabase) {
-    throw new Error('Base de datos no configurada. Edita el archivo .env con tus credenciales de Supabase.');
+import jwt from 'jsonwebtoken';
+
+export function getClientForUser(telegramId) {
+  if (!supabaseUrl || !supabaseKey) return null;
+  
+  if (!process.env.SUPABASE_JWT_SECRET) {
+    console.warn('Falta SUPABASE_JWT_SECRET. Usando cliente sin firmar.');
+    return createClient(supabaseUrl, supabaseKey);
   }
 
-  const { data, error } = await supabase
+  // Firmar un JWT válido por 1 hora con el ID del usuario
+  const token = jwt.sign(
+    {
+      role: 'authenticated',
+      telegram_id: telegramId.toString()
+    },
+    process.env.SUPABASE_JWT_SECRET,
+    { expiresIn: '1h' }
+  );
+
+  return createClient(supabaseUrl, supabaseKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } }
+  });
+}
+
+export function getAdminClient() {
+  if (!supabaseUrl || !supabaseKey) return null;
+  if (!process.env.SUPABASE_JWT_SECRET) return createClient(supabaseUrl, supabaseKey);
+
+  // Firmar un JWT con rol service_role para saltarse RLS temporalmente
+  const token = jwt.sign(
+    { role: 'service_role' },
+    process.env.SUPABASE_JWT_SECRET,
+    { expiresIn: '5m' }
+  );
+
+  return createClient(supabaseUrl, supabaseKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } }
+  });
+}
+
+export async function insertTransaction({ telegramId, username, amount, description, type, rawText }) {
+  const client = getClientForUser(telegramId);
+  if (!client) throw new Error('Base de datos no configurada.');
+
+  const { data, error } = await client
     .from('transactions')
-    .insert([
-      {
-        telegram_id: telegramId,
-        telegram_username: username || null,
-        amount,
-        description,
-        type,
-        raw_text: rawText
-      }
-    ])
+    .insert([{
+      telegram_id: telegramId,
+      telegram_username: username || null,
+      amount,
+      description,
+      type,
+      raw_text: rawText
+    }])
     .select();
 
-  if (error) {
-    console.error('Error al insertar transacción:', error);
-    throw error;
-  }
-
+  if (error) throw error;
   return data[0];
 }
 
 export async function getBalance(telegramId) {
-  if (!supabase) {
-    throw new Error('Base de datos no configurada. Edita el archivo .env con tus credenciales de Supabase.');
-  }
+  const client = getClientForUser(telegramId);
+  if (!client) throw new Error('Base de datos no configurada.');
 
-  const { data, error } = await supabase.rpc('get_user_balance', { uid: telegramId });
+  const { data, error } = await client.rpc('get_user_balance', { uid: telegramId });
+  if (error) throw error;
 
-  if (error) {
-    console.error('Error al obtener balance:', error);
-    throw error;
-  }
-
-  if (!data || data.length === 0) {
-    return { income: 0, expenses: 0, balance: 0 };
-  }
-
+  if (!data || data.length === 0) return { income: 0, expenses: 0, balance: 0 };
   const income = parseFloat(data[0].income) || 0;
   const expenses = parseFloat(data[0].expenses) || 0;
-
-  return {
-    income,
-    expenses,
-    balance: income - expenses
-  };
+  return { income, expenses, balance: income - expenses };
 }
 
-/**
- * Elimina la última transacción registrada por el usuario (función deshacer).
- * 
- * @param {number} telegramId 
- * @returns {Promise<{amount: number, description: string, type: string} | null>} La transacción eliminada, o null si no había ninguna.
- */
 export async function deleteLastTransaction(telegramId) {
-  if (!supabase) {
-    throw new Error('Base de datos no configurada. Edita el archivo .env con tus credenciales de Supabase.');
-  }
+  const client = getClientForUser(telegramId);
+  if (!client) throw new Error('Base de datos no configurada.');
 
-  // Obtener el ID de la transacción más reciente del usuario
-  const { data, error: fetchError } = await supabase
+  const { data, error: fetchError } = await client
     .from('transactions')
     .select('id, amount, description, type')
     .eq('telegram_id', telegramId)
     .order('created_at', { ascending: false })
     .limit(1);
 
-  if (fetchError) {
-    console.error('Error al buscar la última transacción:', fetchError);
-    throw fetchError;
-  }
-
-  if (!data || data.length === 0) {
-    return null;
-  }
+  if (fetchError) throw fetchError;
+  if (!data || data.length === 0) return null;
 
   const lastTx = data[0];
-
-  // Eliminar la transacción por su ID
-  const { error: deleteError } = await supabase
+  const { error: deleteError } = await client
     .from('transactions')
     .delete()
     .eq('id', lastTx.id);
 
-  if (deleteError) {
-    console.error('Error al eliminar transacción:', deleteError);
-    throw deleteError;
-  }
-
+  if (deleteError) throw deleteError;
   return lastTx;
 }

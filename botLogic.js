@@ -1,5 +1,5 @@
 import { parseMessage } from './parser.js';
-import { insertTransaction, getBalance, deleteLastTransaction, supabase } from './db.js';
+import { insertTransaction, getBalance, deleteLastTransaction, getAdminClient } from './db.js';
 
 export async function handleMessage(bot, msg) {
   const chatId = msg.chat.id;
@@ -59,13 +59,14 @@ Escríbeme el monto seguido del concepto (o viceversa):
       return; // Ignorar silenciosamente si no es el admin
     }
     try {
-      if (!supabase) {
+      const adminClient = getAdminClient();
+      if (!adminClient) {
         await bot.sendMessage(chatId, '⚠️ Simulación: Supabase no conectado.');
         return;
       }
 
-      // Obtener todas las transacciones
-      const { data, error } = await supabase.from('transactions').select('*');
+      // Obtener todas las transacciones (usando rol de admin temporal)
+      const { data, error } = await adminClient.from('transactions').select('*');
       if (error) throw error;
 
       // Calcular estadísticas
