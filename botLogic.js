@@ -29,6 +29,17 @@ Escríbeme el monto seguido del concepto (o viceversa):
     return;
   }
 
+  // Comando /novedades (Patch Notes)
+  if (text.startsWith('/novedades')) {
+    const novedadesMessage = `🚀 *Notas del Parche v1.1 - Fase de Seguridad* 🚀\n\n` +
+      `✅ *Zero-Trust Security:* Nadie, ni siquiera nuestros servidores, puede acceder a tus datos financieros sin una firma digital criptográfica de tu cuenta de Telegram.\n` +
+      `✅ *Escudo Anti-Spam:* Implementamos límites de peticiones por minuto para prevenir ataques al bot.\n` +
+      `✅ *IA más inteligente:* El bot ahora ignora porcentajes (ej. "50% de descuento") y se protege contra números absurdamente gigantes para evitar errores matemáticos.\n\n` +
+      `¡Gracias por ser parte de la Beta Privada de Valanze!`;
+    await bot.sendMessage(chatId, novedadesMessage, { parse_mode: 'Markdown' });
+    return;
+  }
+
   // Comando /balance
   if (text.startsWith('/balance')) {
     try {

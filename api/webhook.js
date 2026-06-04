@@ -7,6 +7,26 @@ const token = process.env.TELEGRAM_BOT_TOKEN;
 // Inicializamos el bot SIN modo polling
 const bot = new TelegramBot(token);
 
+const rateLimitCache = new Map();
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minuto
+const MAX_REQUESTS_PER_WINDOW = 20;
+
+function isRateLimited(telegramId) {
+  if (!telegramId) return false;
+  const now = Date.now();
+  if (!rateLimitCache.has(telegramId)) {
+    rateLimitCache.set(telegramId, { count: 1, startTime: now });
+    return false;
+  }
+  const data = rateLimitCache.get(telegramId);
+  if (now - data.startTime > RATE_LIMIT_WINDOW_MS) {
+    rateLimitCache.set(telegramId, { count: 1, startTime: now });
+    return false;
+  }
+  data.count++;
+  return data.count > MAX_REQUESTS_PER_WINDOW;
+}
+
 export default async function handler(req, res) {
   try {
     // Si la solicitud es POST, viene supuestamente de Telegram
@@ -22,6 +42,14 @@ export default async function handler(req, res) {
       const update = req.body;
       
       if (update.message) {
+        const telegramId = update.message.from?.id;
+        
+        // Anti-Spam: Rate Limiting
+        if (isRateLimited(telegramId)) {
+          console.warn(`Rate limit excedido para el usuario ${telegramId}`);
+          return res.status(429).send('Too Many Requests');
+        }
+
         await handleMessage(bot, update.message);
       } else if (update.callback_query) {
         await handleCallbackQuery(bot, update.callback_query);
