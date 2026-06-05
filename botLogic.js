@@ -10,7 +10,7 @@ export async function handleMessage(bot, msg) {
 
   // Comando /start
   if (text.startsWith('/start')) {
-    const helpMessage = `👋 ¡Hola! Soy *Valenze*, tu asistente financiero en Telegram 💸.
+    const helpMessage = `👋 ¡Hola! Soy *Valanze*, tu asistente financiero en Telegram 💸.
 
 Mi trabajo es ayudarte a registrar tus gastos e ingresos de la manera más rápida posible. ¡Olvídate de las hojas de cálculo!
 
@@ -38,7 +38,7 @@ Escríbeme el monto seguido del concepto (o viceversa):
       `✅ *Zero-Trust Security:* Nadie, ni siquiera nuestros servidores, puede acceder a tus datos financieros sin una firma digital criptográfica de tu cuenta de Telegram.\n` +
       `✅ *Escudo Anti-Spam:* Implementamos límites de peticiones por minuto para prevenir ataques al bot.\n` +
       `✅ *IA más inteligente:* El bot ahora ignora porcentajes (ej. "50% de descuento") y se protege contra números absurdamente gigantes para evitar errores matemáticos.\n\n` +
-      `¡Gracias por ser parte de la Beta Privada de Valenze!`;
+      `¡Gracias por ser parte de la Beta Privada de Valanze!`;
     await bot.sendMessage(chatId, novedadesMessage, { parse_mode: 'Markdown' });
     return;
   }
@@ -137,12 +137,12 @@ Escríbeme el monto seguido del concepto (o viceversa):
 
   // Comando /seguridad
   if (text.startsWith('/seguridad')) {
-    const securityMsg = `🛡️ **Seguridad y Privacidad en Valenze**
+    const securityMsg = `🛡️ **Seguridad y Privacidad en Valanze**
 
-1️⃣ **Cero Virus:** Valenze es un bot oficial de Telegram. No tienes que descargar ninguna app externa ni instalar archivos APK.
+1️⃣ **Cero Virus:** Valanze es un bot oficial de Telegram. No tienes que descargar ninguna app externa ni instalar archivos APK.
 2️⃣ **Privacidad Total:** Tus datos NO se comparten con bancos, SUNAT ni agencias de publicidad.
 3️⃣ **Encriptación:** Tu información financiera se guarda en servidores seguros en la nube (AWS) protegidos bajo los estándares de Supabase.
-4️⃣ **Tú tienes el control:** Valenze no pide tus contraseñas del banco ni se conecta a tus tarjetas. Es un registro manual y 100% privado.
+4️⃣ **Tú tienes el control:** Valanze no pide tus contraseñas del banco ni se conecta a tus tarjetas. Es un registro manual y 100% privado.
 
 Tu tranquilidad es nuestra prioridad. 🔒`;
     await bot.sendMessage(chatId, securityMsg, { parse_mode: 'Markdown' });
@@ -152,13 +152,13 @@ Tu tranquilidad es nuestra prioridad. 🔒`;
   // Comando /legal
   if (text.startsWith('/legal')) {
     const legalMsg = `📄 *Política de Privacidad y Términos de Uso*\n\n` +
-      `Valenze cumple con la normativa peruana vigente (Ley N° 29733 de Protección de Datos Personales).\n\n` +
+      `Valanze cumple con la normativa peruana vigente (Ley N° 29733 de Protección de Datos Personales).\n\n` +
       `1️⃣ *Recopilación:* Solo recopilamos tu ID de Telegram y las transacciones que registras voluntariamente.\n` +
       `2️⃣ *Uso:* No vendemos, alquilamos ni compartimos tus datos con terceros, bancos o SUNAT.\n` +
       `3️⃣ *Arquitectura Zero-Trust:* Tu información financiera requiere una firma criptográfica única asociada a tu cuenta para ser leída. Ni siquiera nuestros desarrolladores pueden acceder a ella directamente.\n` +
       `4️⃣ *Derechos ARCO:* Puedes solicitar la eliminación total y permanente de tus registros contactando a soporte.\n\n` +
-      `*Nota sobre funcionalidades futuras:* Si en el futuro Valenze permite el registro por notas de voz o fotos de recibos, dichos archivos multimedia no serán almacenados permanentemente en nuestros servidores; solo se extraerá el texto numérico.\n\n` +
-      `Al usar Valenze, aceptas estas condiciones.`;
+      `*Nota sobre funcionalidades futuras:* Si en el futuro Valanze permite el registro por notas de voz o fotos de recibos, dichos archivos multimedia no serán almacenados permanentemente en nuestros servidores; solo se extraerá el texto numérico.\n\n` +
+      `Al usar Valanze, aceptas estas condiciones.`;
     await bot.sendMessage(chatId, legalMsg, { parse_mode: 'Markdown' });
     return;
   }
@@ -184,7 +184,7 @@ Tu tranquilidad es nuestra prioridad. 🔒`;
       });
 
       const fileOptions = {
-        filename: 'Reporte_Valenze.csv',
+        filename: 'Reporte_Valanze.csv',
         contentType: 'text/csv',
       };
 
@@ -210,7 +210,7 @@ Tu tranquilidad es nuestra prioridad. 🔒`;
         ]
       }
     };
-    await bot.sendMessage(chatId, '🆘 **Centro de Ayuda Valenze**\n\n¿En qué te puedo ayudar hoy? Elige una opción:', { parse_mode: 'Markdown', ...helpOptions });
+    await bot.sendMessage(chatId, '🆘 **Centro de Ayuda Valanze**\n\n¿En qué te puedo ayudar hoy? Elige una opción:', { parse_mode: 'Markdown', ...helpOptions });
     return;
   }
 
@@ -285,7 +285,7 @@ export async function handleCallbackQuery(bot, callbackQuery) {
     await bot.sendMessage(chatId, '🗑️ **¿Te equivocaste?**\n\nCada vez que registras algo, aparecerá un botón que dice `❌ Deshacer registro` debajo del mensaje de confirmación. Solo tócalo y se borrará al instante.', { parse_mode: 'Markdown' });
     await bot.answerCallbackQuery(callbackQuery.id);
   } else if (data === 'help_support') {
-    await bot.sendMessage(chatId, '📞 **Soporte Directo**\n\nComo somos una aplicación en versión Beta, tu retroalimentación vale oro. Si algo falla, escríbele un mensaje directo al fundador de Valenze para que lo solucione hoy mismo.', { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, '📞 **Soporte Directo**\n\nComo somos una aplicación en versión Beta, tu retroalimentación vale oro. Si algo falla, escríbele un mensaje directo al fundador de Valanze para que lo solucione hoy mismo.', { parse_mode: 'Markdown' });
     await bot.answerCallbackQuery(callbackQuery.id);
   }
 }
