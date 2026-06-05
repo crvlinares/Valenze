@@ -1,4 +1,4 @@
-# Valanze - Changelog (Notas del Parche)
+# Valenze - Changelog (Notas del Parche)
 
 Todas las actualizaciones y mejoras notables de este proyecto serán documentadas en este archivo.
 

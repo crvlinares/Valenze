@@ -14,7 +14,7 @@ if (!token || token.includes('your-telegram-token')) {
 // Inicializar el bot en modo polling (escuchando activamente) - SOLO PARA DESARROLLO LOCAL
 const bot = new TelegramBot(token, { polling: true });
 
-console.log('🤖 Valanze_bot está activo en modo LOCAL y escuchando mensajes...');
+console.log('🤖 Valenze_bot está activo en modo LOCAL y escuchando mensajes...');
 
 bot.on('message', async (msg) => {
   await handleMessage(bot, msg);

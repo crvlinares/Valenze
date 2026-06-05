@@ -127,3 +127,17 @@ export async function getReport(telegramId) {
 
   return data || [];
 }
+
+export async function exportTransactions(telegramId) {
+  const client = getClientForUser(telegramId);
+  if (!client) throw new Error('Base de datos no configurada.');
+
+  const { data, error } = await client
+    .from('transactions')
+    .select('created_at, type, amount, category, description')
+    .eq('telegram_id', telegramId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
