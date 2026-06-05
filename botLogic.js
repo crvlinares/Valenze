@@ -1,3 +1,4 @@
+import { parseMessage } from './parser.js';
 import { insertTransaction, getBalance, deleteLastTransaction, getAdminClient, getReport } from './db.js';
 
 export async function handleMessage(bot, msg) {
