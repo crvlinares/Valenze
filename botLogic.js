@@ -10,23 +10,16 @@ export async function handleMessage(bot, msg) {
 
   // Comando /start
   if (text.startsWith('/start')) {
-    const helpMessage = `👋 ¡Hola! Soy *Valanze*, tu asistente financiero en Telegram 💸.
+    const helpMessage = `Hola, soy Valanze.
+Llevo tu cuenta sin enredos.
 
-Mi trabajo es ayudarte a registrar tus gastos e ingresos de la manera más rápida posible. ¡Olvídate de las hojas de cálculo!
+Escribe algo como \`15 taxi\` o \`+500 sueldo\` y yo lo anoto por ti.
 
-✍️ **¿Cómo registrar un gasto o ingreso?**
-Escríbeme el monto seguido del concepto (o viceversa):
-• \`15.50 menu\`  → Registra un gasto de S/ 15.50
-• \`taxi 12\`     → Registra un gasto de S/ 12.00
-• \`+100 de papa\` → Registra un ingreso de S/ 100.00 (usa el signo *+*)
-• \`sueldo 2500\`  → Registra un ingreso (usa palabras clave como *sueldo* o *pago*)
-
-📊 **Comandos disponibles:**
-• /balance - Revisa el total de ingresos, gastos y saldo.
-• /reporte - Muestra en qué categorías estás gastando más este mes.
-• /exportar - Descarga todo tu historial en formato Excel (CSV).
-• /novedades - Entérate de las últimas mejoras del bot.
-• /legal - Política de Privacidad y Términos de Uso.`;
+Comandos útiles:
+/balance - cómo va tu cuenta
+/reporte - en qué gastaste este mes
+/exportar - descarga tus datos en Excel
+/ayuda - si necesitas una mano`;
 
     await bot.sendMessage(chatId, helpMessage, { parse_mode: 'Markdown' });
     return;
@@ -46,19 +39,18 @@ Escríbeme el monto seguido del concepto (o viceversa):
   // Comando /balance
   if (text.startsWith('/balance')) {
     try {
-
       const { income, expenses, balance } = await getBalance(userId);
-      const balanceMessage = `📊 **Tu Balance Financiero:**
+      const balanceMessage = `Aquí tienes cómo va tu cuenta.
 
-📥 *Ingresos:* S/ ${income.toFixed(2)}
-💸 *Gastos:* S/ ${expenses.toFixed(2)}
-━━━━━━━━━━━━━━━━━━
-💰 *Saldo Neto:* **S/ ${balance.toFixed(2)}**`;
+Entró: S/ ${income.toFixed(2)}
+Salió: S/ ${expenses.toFixed(2)}
+
+Te quedan: S/ ${balance.toFixed(2)}`;
 
       await bot.sendMessage(chatId, balanceMessage, { parse_mode: 'Markdown' });
     } catch (error) {
       console.error('Error en comando /balance:', error);
-      await bot.sendMessage(chatId, '❌ Ocurrió un error al consultar tu balance.');
+      await bot.sendMessage(chatId, 'Algo salió mal de mi lado.\nInténtalo otra vez en un momento.');
     }
     return;
   }
@@ -113,24 +105,32 @@ Escríbeme el monto seguido del concepto (o viceversa):
       const data = await getReport(userId);
       
       if (!data || data.length === 0) {
-        await bot.sendMessage(chatId, '📊 Aún no tienes gastos registrados este mes para generar un reporte.');
+        await bot.sendMessage(chatId, 'Aún no tienes gastos registrados este mes para generar un reporte.');
         return;
       }
 
-      let reportMsg = `📊 *Tu Reporte de Gastos del Mes*\n\n`;
+      let reportMsg = `Echémosle un ojo a tus números de este mes.\n\n`;
       let total = 0;
+      let maxCategory = { name: '', amount: 0 };
       
       data.forEach(row => {
         const val = parseFloat(row.total);
         total += val;
-        reportMsg += `🔸 *${row.category}*: S/ ${val.toFixed(2)}\n`;
+        reportMsg += `• ${row.category}: S/ ${val.toFixed(2)}\n`;
+        if (val > maxCategory.amount) {
+          maxCategory = { name: row.category, amount: val };
+        }
       });
       
-      reportMsg += `\n💸 *Gasto Total del Mes:* S/ ${total.toFixed(2)}`;
+      reportMsg += `\nTotal gastado: S/ ${total.toFixed(2)}`;
+      if (maxCategory.name) {
+        reportMsg += `\nTu mayor gasto fue ${maxCategory.name}.`;
+      }
+      
       await bot.sendMessage(chatId, reportMsg, { parse_mode: 'Markdown' });
     } catch (error) {
       console.error('Error generando reporte:', error);
-      await bot.sendMessage(chatId, '❌ Hubo un error al generar tu reporte mensual.');
+      await bot.sendMessage(chatId, 'Algo salió mal de mi lado.\nInténtalo otra vez en un momento.');
     }
     return;
   }
@@ -194,7 +194,7 @@ Tu tranquilidad es nuestra prioridad. 🔒`;
 
     } catch (error) {
       console.error('Error exportando CSV:', error);
-      await bot.sendMessage(chatId, '❌ Hubo un error al generar tu archivo.');
+      await bot.sendMessage(chatId, 'Algo salió mal de mi lado.\nInténtalo otra vez en un momento.');
     }
     return;
   }
@@ -204,13 +204,13 @@ Tu tranquilidad es nuestra prioridad. 🔒`;
     const helpOptions = {
       reply_markup: {
         inline_keyboard: [
-          [{ text: '❓ ¿Cómo anoto mis gastos?', callback_data: 'help_register' }],
-          [{ text: '🗑️ Me equivoqué, ¿cómo borro?', callback_data: 'help_undo' }],
-          [{ text: '📞 Hablar con un humano', callback_data: 'help_support' }]
+          [{ text: '¿Cómo anoto cosas?', callback_data: 'help_register' }],
+          [{ text: 'Me equivoqué al anotar', callback_data: 'help_undo' }],
+          [{ text: 'Hablar con un humano', callback_data: 'help_support' }]
         ]
       }
     };
-    await bot.sendMessage(chatId, '🆘 **Centro de Ayuda Valanze**\n\n¿En qué te puedo ayudar hoy? Elige una opción:', { parse_mode: 'Markdown', ...helpOptions });
+    await bot.sendMessage(chatId, '¿En qué te ayudo?\nVamos por partes.', { parse_mode: 'Markdown', ...helpOptions });
     return;
   }
 
@@ -220,36 +220,36 @@ Tu tranquilidad es nuestra prioridad. 🔒`;
   // --- Manejo de mensajes normales (Registro) ---
   const parsed = parseMessage(text);
   if (!parsed) {
-    await bot.sendMessage(chatId, '🤔 No logré entender el registro. Escribe un monto y un concepto (ej. `12 taxi` o `+50 de papa`).');
+    await bot.sendMessage(chatId, 'No logré entender eso.\nEscribe un monto y un concepto (ej. `12 taxi` o `+50 sueldo`).');
     return;
   }
 
   const { amount, description, type, category } = parsed;
   const username = msg.from.username;
 
-  const typeIcon = type === 'ingreso' ? '📥' : '💸';
-  const typeText = type === 'ingreso' ? 'Ingreso' : 'Gasto';
-  // Evitar mostrar categoría si es ingreso (para no confundir al usuario)
-  const categoryDisplay = type === 'gasto' ? `\n🏷️ *Categoría:* ${category}` : '';
-
   try {
     await insertTransaction({ telegramId: userId, username, amount, description, type, category, rawText: text });
 
-    const successMessage = `✅ Registrado: *${typeText}* ${typeIcon}
-💰 *Monto:* S/ ${amount.toFixed(2)}
-📝 *Concepto:* "${description}"${categoryDisplay}`;
+    const confirmations = ["Listo.", "Anotado.", "Hecho.", "Guardado."];
+    const randomConfirm = confirmations[Math.floor(Math.random() * confirmations.length)];
+
+    let detail = `S/ ${amount.toFixed(2)}`;
+    if (type === 'gasto' && category) detail += ` en ${category}`;
+    if (description) detail += ` · ${description}`;
+
+    const successMessage = `${randomConfirm}\n${detail}`;
 
     await bot.sendMessage(chatId, successMessage, {
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
-          [{ text: '❌ Deshacer registro', callback_data: 'undo_last' }]
+          [{ text: '❌ Deshacer', callback_data: 'undo_last' }]
         ]
       }
     });
   } catch (error) {
     console.error('Error procesando mensaje:', error);
-    await bot.sendMessage(chatId, '❌ Hubo un error al guardar el registro.');
+    await bot.sendMessage(chatId, 'Algo salió mal de mi lado.\nInténtalo otra vez en un momento.');
   }
 }
 
@@ -264,9 +264,8 @@ export async function handleCallbackQuery(bot, callbackQuery) {
 
       const deletedTx = await deleteLastTransaction(userId);
       if (deletedTx) {
-        await bot.answerCallbackQuery(callbackQuery.id, { text: '¡Registro eliminado!' });
-        const typeText = deletedTx.type === 'ingreso' ? 'Ingreso 📥' : 'Gasto 💸';
-        await bot.editMessageText(`🗑️ *Registro Eliminado:*\n*${typeText}* de S/ ${parseFloat(deletedTx.amount).toFixed(2)} por "${deletedTx.description}"`, {
+        await bot.answerCallbackQuery(callbackQuery.id, { text: 'Registro borrado' });
+        await bot.editMessageText(`Listo, ese registro ya no cuenta.`, {
           chat_id: chatId,
           message_id: msg.message_id,
           parse_mode: 'Markdown'
@@ -276,16 +275,16 @@ export async function handleCallbackQuery(bot, callbackQuery) {
       }
     } catch (error) {
       console.error('Error al deshacer:', error);
-      await bot.answerCallbackQuery(callbackQuery.id, { text: 'Error al deshacer.', show_alert: true });
+      await bot.answerCallbackQuery(callbackQuery.id, { text: 'Algo salió mal de mi lado.', show_alert: true });
     }
   } else if (data === 'help_register') {
-    await bot.sendMessage(chatId, '📝 **Para registrar algo solo escríbelo:**\n\nEjemplo de Gasto: `15 almuerzo`\nEjemplo de Ingreso: `+50 pago`\n\nNo necesitas usar comandos ni menús complejos, yo entiendo tu texto automáticamente.', { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, 'Para anotar algo solo escríbelo:\n\nEjemplo de Gasto: `15 almuerzo`\nEjemplo de Ingreso: `+50 pago`\n\nNo necesitas comandos, yo lo entiendo.', { parse_mode: 'Markdown' });
     await bot.answerCallbackQuery(callbackQuery.id);
   } else if (data === 'help_undo') {
-    await bot.sendMessage(chatId, '🗑️ **¿Te equivocaste?**\n\nCada vez que registras algo, aparecerá un botón que dice `❌ Deshacer registro` debajo del mensaje de confirmación. Solo tócalo y se borrará al instante.', { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, 'Cada vez que anotas algo, aparece un botón que dice `❌ Deshacer` abajo. Tócalo y se borra al instante.', { parse_mode: 'Markdown' });
     await bot.answerCallbackQuery(callbackQuery.id);
   } else if (data === 'help_support') {
-    await bot.sendMessage(chatId, '📞 **Soporte Directo**\n\nComo somos una aplicación en versión Beta, tu retroalimentación vale oro. Si algo falla, escríbele un mensaje directo al fundador de Valanze para que lo solucione hoy mismo.', { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, 'Escríbele directo al fundador para cualquier duda o problema.', { parse_mode: 'Markdown' });
     await bot.answerCallbackQuery(callbackQuery.id);
   }
 }
